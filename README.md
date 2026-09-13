@@ -8,8 +8,7 @@
   <em>Human Strategy. Machine Intelligence. One Board.</em>
 </p>
 
-<p align="center">
-  <strong>Main Dashboard:</strong> <a href="https://og-gambet.vercel.app">og-gambet.vercel.app</a> | <strong>Repo:</strong> <a href="https://github.com/sauravthakurq/main-og-open-gambet-v1">Dashboard Code</a><br/>
+
   <strong>Landing Page:</strong> <a href="https://ogopengambit.vercel.app">ogopengambit.vercel.app</a> | <strong>Repo:</strong> <a href="https://github.com/sauravthakurq/OG">Landing Page Code</a>
 </p>
 
