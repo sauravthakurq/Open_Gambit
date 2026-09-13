@@ -8,7 +8,7 @@
   <em>Human Strategy. Machine Intelligence. One Board.</em>
 </p>
 
-
+<h1 align="center">
   <strong>Landing Page:</strong> <a href="https://ogopengambit.vercel.app">ogopengambit.vercel.app</a> | <strong>Repo:</strong> <a href="https://github.com/sauravthakurq/OG">Landing Page Code</a>
 </p>
 
