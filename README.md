@@ -9,7 +9,7 @@
 </p>
 
 <h1 align="center">
-  <strong>Open Gambit:</strong> <a href="https://ogopengambit.vercel.app">ogopengambit.vercel.app</a> | <strong>Repo:</strong> <a href="https://github.com/sauravthakurq/OG">Landing Page Code</a>
+  <strong>Open Gambit:</strong> <a href="https://ogopengambit.vercel.app">ogopengambit.vercel.app</a
 </p>
 
 ---
