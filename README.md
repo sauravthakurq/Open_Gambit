@@ -88,11 +88,9 @@
 
 This entire platform—from the UI/UX design to the complex AI architecture and frontend development—was crafted by **Saurav Thakur**.
 
-💼 **LinkedIn:** [https://linkedin.com/in/sauravthakurq](https://linkedin.com/in/sauravthakurq)  
-🌍 **Portfolio:** [https://sauravthakur.in/](https://sauravthakur.in/)  
-💻 **GitHub:** [https://github.com/sauravthakurq](https://github.com/sauravthakurq)  
+🌍 **Portfolio:** [https://sauravthakur.in/](https://sauravthakur.in/)   
 ▶️ **YouTube:** [https://www.youtube.com/@SauravThakurx](https://www.youtube.com/@SauravThakurx)  
-𝕏 **X (Twitter):** [https://x.com/SauravThakurx](https://x.com/SauravThakurx)  
+
 
 ---
 
