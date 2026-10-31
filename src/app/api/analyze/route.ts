@@ -2,6 +2,7 @@ import { generateText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { analysisRequestSchema, isApprovedBaseUrl, requiresApiKey } from '@/lib/aiRequestValidation';
 
 const DEFAULT_BASE_URLS: Record<string, string> = {
   'xAI': 'https://api.x.ai/v1',
@@ -53,14 +54,28 @@ The JSON must exactly match this structure:
 
 export async function POST(req: Request) {
   try {
-    const { pgn, provider, model, apiKey, baseUrl, organization } = await req.json();
+    const contentLength = Number(req.headers.get('content-length') || 0);
+    if (contentLength > 64_000) {
+      return new Response(JSON.stringify({ error: 'Request body is too large' }), { status: 413 });
+    }
 
-    if (!apiKey && provider !== 'Ollama' && provider !== 'LM Studio') {
+    const parsedRequest = analysisRequestSchema.safeParse(await req.json());
+    if (!parsedRequest.success) {
+      return new Response(JSON.stringify({ error: 'Invalid request payload' }), { status: 400 });
+    }
+
+    const { pgn, provider, model, apiKey, baseUrl, organization } = parsedRequest.data;
+
+    if (!isApprovedBaseUrl(provider, baseUrl)) {
+      return new Response(JSON.stringify({ error: 'Custom provider endpoints are not supported' }), { status: 400 });
+    }
+
+    if (requiresApiKey(provider) && !apiKey) {
       return new Response(JSON.stringify({ error: 'API key is required' }), { status: 400 });
     }
 
     const finalBaseUrl = baseUrl || DEFAULT_BASE_URLS[provider] || undefined;
-    
+
     let llmModel;
     if (provider === 'OpenAI') {
       const openai = createOpenAI({ apiKey, baseURL: finalBaseUrl, organization: organization || undefined });
