@@ -2,6 +2,7 @@ import { generateText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { chatRequestSchema, isApprovedBaseUrl, requiresApiKey } from '@/lib/aiRequestValidation';
 
 const DEFAULT_BASE_URLS: Record<string, string> = {
   'xAI': 'https://api.x.ai/v1',
@@ -43,24 +44,27 @@ async function sleep(ms: number) {
 
 export async function POST(req: Request) {
   try {
-    const { provider, model, apiKey, baseUrl, organization, temperature, maxTokens, prompt } = await req.json();
+    const contentLength = Number(req.headers.get('content-length') || 0);
+    if (contentLength > 64_000) {
+      return new Response(JSON.stringify({ error: 'Request body is too large' }), { status: 413 });
+    }
 
-    if (!apiKey && provider !== 'Ollama' && provider !== 'LM Studio') {
+    const parsedRequest = chatRequestSchema.safeParse(await req.json());
+    if (!parsedRequest.success) {
+      return new Response(JSON.stringify({ error: 'Invalid request payload' }), { status: 400 });
+    }
+
+    const { provider, model, apiKey, baseUrl, organization, temperature, maxTokens, prompt } = parsedRequest.data;
+
+    if (!isApprovedBaseUrl(provider, baseUrl)) {
+      return new Response(JSON.stringify({ error: 'Custom provider endpoints are not supported' }), { status: 400 });
+    }
+
+    if (requiresApiKey(provider) && !apiKey) {
       return new Response(JSON.stringify({ error: 'API key is required' }), { status: 400 });
     }
 
     const finalBaseUrl = baseUrl || DEFAULT_BASE_URLS[provider] || undefined;
-    
-    // Mask API key for secure logging
-    const maskedKey = apiKey && apiKey.length > 8 
-      ? `${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}` 
-      : (apiKey ? 'Provided (Short)' : 'None');
-      
-    console.log(`\n[AI Provider Request]`);
-    console.log(`- Provider: ${provider}`);
-    console.log(`- Model: ${model}`);
-    console.log(`- Endpoint: ${finalBaseUrl || 'Default for provider'}`);
-    console.log(`- Auth Header Present: ${maskedKey}`);
 
     let llmModel;
     if (provider === 'OpenAI') {
