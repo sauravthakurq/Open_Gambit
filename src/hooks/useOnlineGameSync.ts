@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import {
-  doc, onSnapshot, updateDoc, addDoc,
-  collection, serverTimestamp, Timestamp, increment
+  doc, onSnapshot, updateDoc, collection,
+  runTransaction, serverTimestamp, Timestamp
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '@/lib/firebase';
 import { useGameStore } from '@/store/useGameStore';
@@ -154,29 +154,44 @@ export function useOnlineGameSync() {
       }
     }
 
-    // Write move to subcollection
-    await addDoc(collection(db, 'games', onlineGameId, 'moves'), {
-      moveIndex: onlineGame.moveCount + 1,
-      san: moveResult.san,
-      uci: from + to + (promotion || ''),
-      from,
-      to,
-      promotion: promotion || undefined,
-      fen: newFen,
-      playedAt: now,
-      playerUid: firebaseUser.uid,
-    } satisfies Partial<OnlineMove>);
+    // Commit the move and the resulting board state atomically. A transaction
+    // re-reads the game first, so two clients cannot both make the same turn.
+    const gameRef = doc(db, 'games', onlineGameId);
+    const moveRef = doc(collection(db, 'games', onlineGameId, 'moves'));
 
-    // Update game document
-    await updateDoc(doc(db, 'games', onlineGameId), {
-      fen: newFen,
-      pgn: newPgn,
-      turn: localGame.turn(),
-      moveCount: increment(1),
-      lastMoveAt: now,
-      status: newStatus,
-      result,
-      endReason,
+    await runTransaction(db, async (transaction) => {
+      const latestSnapshot = await transaction.get(gameRef);
+      if (!latestSnapshot.exists()) {
+        throw new Error('Game no longer exists');
+      }
+
+      const latestGame = latestSnapshot.data() as OnlineGame;
+      if (latestGame.status !== 'active' || latestGame.turn !== myColor) {
+        throw new Error('It is no longer your turn');
+      }
+
+      transaction.set(moveRef, {
+        moveIndex: (latestGame.moveCount || 0) + 1,
+        san: moveResult.san,
+        uci: from + to + (promotion || ''),
+        from,
+        to,
+        promotion: promotion || undefined,
+        fen: newFen,
+        playedAt: now,
+        playerUid: firebaseUser.uid,
+      } satisfies Partial<OnlineMove>);
+
+      transaction.update(gameRef, {
+        fen: newFen,
+        pgn: newPgn,
+        turn: localGame.turn(),
+        moveCount: (latestGame.moveCount || 0) + 1,
+        lastMoveAt: now,
+        status: newStatus,
+        result,
+        endReason,
+      });
     });
 
     return true;
